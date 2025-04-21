@@ -1,0 +1,16 @@
+{
+  "compatibility_date": "2025-04-01",
+  "main": "src/index.ts",
+  "name": "memoryclaude",
+  "upload_source_maps": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "552e3271-f379-4f36-8bb5-496972fbd2bb",
+      "database_name": "yellow-glitter-b521-d1"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
