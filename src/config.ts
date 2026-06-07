@@ -1,6 +1,4 @@
 // Configurazione del sync ZAK -> Notion PRENOTAZIONI.
-// Nessun segreto qui: le credenziali stanno nei secret del Worker.
-
 export const NOTION_DB_ID = "8a4031151e134b79b10a795c936b2c6c";
 
 export const ZAK_BASE = "https://kapi.wubook.net/kp";
@@ -9,24 +7,23 @@ export type Struttura = "Divo Apartments" | "Relais Colonna" | "Vatican Escape";
 
 export interface UnitInfo {
   struttura: Struttura;
-  sistemazione: string; // etichetta leggibile mostrata nella dashboard
-  cameraDivo?: "BLU" | "ROSSO" | "GIALLO" | "BORGO"; // valorizzato solo per Divo
+  sistemazione: string;
+  cameraDivo?: "BLU" | "ROSSO" | "GIALLO" | "BORGO";
+  photoUrl?: string;
 }
 
-// Mappa id_zak_room_type (numerico, come stringa) -> struttura + sistemazione.
-// Valori reali confermati dal Planner ZAK (giugno 2026).
 export const UNIT_MAP: Record<string, UnitInfo> = {
   // Divo Apartments (VivaWallet / Villaggio Turchese)
-  "63470": { struttura: "Divo Apartments", sistemazione: "BLU",   cameraDivo: "BLU" },
-  "63620": { struttura: "Divo Apartments", sistemazione: "ROSSA", cameraDivo: "ROSSO" },
-  "63621": { struttura: "Divo Apartments", sistemazione: "ORO",   cameraDivo: "GIALLO" },
-  "63471": { struttura: "Divo Apartments", sistemazione: "BORGO", cameraDivo: "BORGO" },
+  "63470": { struttura: "Divo Apartments", sistemazione: "BLU",   cameraDivo: "BLU",   photoUrl: "https://divoapartments.com/wp-content/uploads/2019/07/DSC_1832.jpg" },
+  "63620": { struttura: "Divo Apartments", sistemazione: "ROSSA", cameraDivo: "ROSSO", photoUrl: "https://divoapartments.com/wp-content/uploads/2019/07/DSC_1935.jpg" },
+  "63621": { struttura: "Divo Apartments", sistemazione: "ORO",   cameraDivo: "GIALLO",photoUrl: "https://divoapartments.com/wp-content/uploads/2019/07/DSC_1986.jpg" },
+  "63471": { struttura: "Divo Apartments", sistemazione: "BORGO", cameraDivo: "BORGO", photoUrl: "https://divoapartments.com/wp-content/uploads/2021/07/divo-apartments-roma_luxury_00006.jpg" },
   // Relais Colonna (Stripe / Roma Centro Relais)
-  "63466": { struttura: "Relais Colonna", sistemazione: "Suite Vasca (A)" },
-  "63469": { struttura: "Relais Colonna", sistemazione: "Suite (D)" },
-  "63468": { struttura: "Relais Colonna", sistemazione: "Standard (B/C)" },
-  // Vatican Escape (Stripe / Roma Centro Relais)
-  "88625": { struttura: "Vatican Escape", sistemazione: "Vatican Escape" },
+  "63466": { struttura: "Relais Colonna", sistemazione: "Suite Vasca (A)", photoUrl: "https://www.relaiscolonna.it/images/rc/camere/suite-idro.jpg" },
+  "63469": { struttura: "Relais Colonna", sistemazione: "Suite (D)",       photoUrl: "https://www.relaiscolonna.it/images/rc/camere/suite.jpg" },
+  "63468": { struttura: "Relais Colonna", sistemazione: "Standard (B/C)",  photoUrl: "https://www.relaiscolonna.it/images/rc/camere/matri1_xl.jpg" },
+  // Vatican Escape (Stripe / Roma Centro Relais) — foto da Drive, da aggiornare
+  "88625": { struttura: "Vatican Escape", sistemazione: "Vatican Escape", photoUrl: undefined },
 };
 
 export const GUIDEBOOK_URL: Record<string, string> = {

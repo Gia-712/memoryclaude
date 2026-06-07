@@ -1,6 +1,4 @@
 // Upsert delle prenotazioni nel database Notion PRENOTAZIONI.
-// Match per "Codice ZAK": se esiste -> aggiorna solo i campi provenienti da ZAK,
-// lasciando intatti i campi gestiti a mano (Modalita' Booking, Stato ricevuta, ...).
 import { GUIDEBOOK_URL, mapChannel, mapUnit } from "./config";
 import type { ZakReservation } from "./zak";
 
@@ -29,7 +27,6 @@ async function findPageByZakCode(token: string, dbId: string, rcode: string): Pr
   return json.results?.[0]?.id ?? null;
 }
 
-// Proprieta' che derivano da ZAK (sovrascrivibili a ogni sync).
 function zakProps(r: ZakReservation) {
   const unit = mapUnit(r.roomTypeId);
   const piattaforma = mapChannel(r.channel);
@@ -58,8 +55,7 @@ function zakProps(r: ZakReservation) {
   return props;
 }
 
-// Proprieta' impostate SOLO alla creazione (default; non toccate sugli update).
-function defaultsOnCreate() {
+function defaultsOnCreate(r: ZakReservation) {
   return {
     "Stato ricevuta": { select: { name: "Da fare" } },
   };
@@ -77,8 +73,10 @@ export async function upsertReservation(
 ): Promise<UpsertResult> {
   if (!r.rcode) throw new Error("Reservation senza rcode: impossibile fare upsert");
   const existing = await findPageByZakCode(token, dbId, r.rcode);
+  const unit = mapUnit(r.roomTypeId);
 
   if (existing) {
+    // Update: non tocca la cover (potrebbe essere stata cambiata manualmente).
     const res = await fetch(`${NOTION_API}/pages/${existing}`, {
       method: "PATCH",
       headers: headers(token),
@@ -88,13 +86,18 @@ export async function upsertReservation(
     return { rcode: r.rcode, action: "updated" };
   }
 
+  // Creazione: imposta la cover con la foto della camera.
+  const body: Record<string, any> = {
+    parent: { database_id: dbId },
+    properties: { ...zakProps(r), ...defaultsOnCreate(r) },
+  };
+  if (unit?.photoUrl) {
+    body.cover = { type: "external", external: { url: unit.photoUrl } };
+  }
   const res = await fetch(`${NOTION_API}/pages`, {
     method: "POST",
     headers: headers(token),
-    body: JSON.stringify({
-      parent: { database_id: dbId },
-      properties: { ...zakProps(r), ...defaultsOnCreate() },
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Notion create HTTP ${res.status}: ${await res.text()}`);
   return { rcode: r.rcode, action: "created" };
