@@ -12,6 +12,20 @@ function authorized(url: URL, env: Env): boolean {
   return url.searchParams.get("key") === env.SYNC_SECRET;
 }
 
+async function tryCustomer(apiKey: string, id: number) {
+  try {
+    const res = await fetch(`${ZAK_BASE}/customers/fetch_customer`, {
+      method: "POST",
+      headers: { "x-api-key": apiKey, "content-type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const text = await res.text();
+    return { id, status: res.status, body: text.slice(0, 500) };
+  } catch (e: any) {
+    return { id, error: e?.message };
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -33,23 +47,17 @@ export default {
         dfrom:        r.rooms?.[0]?.dfrom,
         dto:          r.rooms?.[0]?.dto,
       }));
-      // Mostra la risposta RAW dell'endpoint customer per trovare la struttura corretta.
-      const firstBooker = raw[0]?.booker;
-      let customerRaw: any = null;
-      if (firstBooker) {
-        try {
-          const res = await fetch(`${ZAK_BASE}/customers/fetch_customer`, {
-            method: "POST",
-            headers: { "x-api-key": env.ZAK_API_KEY, "content-type": "application/json" },
-            body: JSON.stringify({ id: firstBooker }),
-          });
-          const text = await res.text();
-          customerRaw = { status: res.status, body: text.slice(0, 1000) };
-        } catch (e: any) {
-          customerRaw = { error: e?.message };
-        }
-      }
-      return Response.json({ count: raw.length, summary, customerRaw });
+      // Prova booker + primo customer da rooms[0] per trovare quale porta il nome.
+      const first = raw[0];
+      const booker = first?.booker;
+      const firstRoomCustomer = first?.rooms?.[0]?.customers?.[0]?.id;
+      const customerTests = await Promise.all([
+        booker ? tryCustomer(env.ZAK_API_KEY, booker) : null,
+        firstRoomCustomer && firstRoomCustomer !== booker
+          ? tryCustomer(env.ZAK_API_KEY, firstRoomCustomer)
+          : null,
+      ]);
+      return Response.json({ count: raw.length, summary, customerTests });
     }
 
     return new Response(
