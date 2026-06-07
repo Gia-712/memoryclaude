@@ -1,12 +1,7 @@
 // Worker "ponte" ZAK -> Notion per la dashboard PRENOTAZIONI.
-//
-// Rotte HTTP:
-//   GET /      -> pagina di stato
-//   GET /sync  -> esegue il sync ora (protetta da ?key=SYNC_SECRET)
-//   GET /debug -> mostra summary di tutte le prenotazioni ZAK (per trovare i room_type_id Divo)
 import { renderHtml } from "./renderHtml";
 import { runSync, type SyncEnv } from "./sync";
-import { fetchTodayReservations } from "./zak";
+import { fetchTodayReservations, fetchCustomerName } from "./zak";
 
 interface Env extends SyncEnv {
   SYNC_SECRET?: string;
@@ -30,16 +25,20 @@ export default {
     if (url.pathname === "/debug") {
       if (!authorized(url, env)) return new Response("Unauthorized", { status: 401 });
       const raw = await fetchTodayReservations(env.ZAK_API_KEY);
-      // Summary compatto: utile per identificare i room_type_id delle camere Divo.
       const summary = raw.map(r => ({
         id_human:     r.id_human ?? r.id,
         channel:      r.origin?.channel,
+        booker:       r.booker,
         room_type_id: r.rooms?.[0]?.id_zak_room_type,
-        room_id:      r.rooms?.[0]?.id_zak_room,
         dfrom:        r.rooms?.[0]?.dfrom,
         dto:          r.rooms?.[0]?.dto,
       }));
-      return Response.json({ count: raw.length, summary, full_first_sample: raw[0] ?? null });
+      // Test fetchCustomerName sul primo booker per verificare l'endpoint.
+      const firstBooker = raw[0]?.booker;
+      const customerTest = firstBooker
+        ? { bookerId: firstBooker, name: await fetchCustomerName(env.ZAK_API_KEY, firstBooker) }
+        : null;
+      return Response.json({ count: raw.length, summary, customerTest });
     }
 
     return new Response(
@@ -56,7 +55,7 @@ export default {
     ctx.waitUntil(
       runSync(env).then((out) => {
         if (!out.ok) console.error("Sync errors:", out.errors);
-        else console.log(`Sync ok: ${out.total} Divo, ${out.skipped} saltate (altre strutture)`);
+        else console.log(`Sync ok: ${out.total} prenotazioni, ${out.skipped} saltate`);
       }),
     );
   },

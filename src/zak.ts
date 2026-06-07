@@ -55,13 +55,14 @@ function extractList(json: any): ZakReservationRaw[] {
 
 export interface ZakReservation {
   rcode: string;
+  bookerId?: number;   // ID numerico booker, usato per fetchCustomerName
   guestName?: string;
-  arrival?: string;   // YYYY-MM-DD
-  departure?: string; // YYYY-MM-DD
+  arrival?: string;    // YYYY-MM-DD
+  departure?: string;  // YYYY-MM-DD
   guests?: number;
   roomTypeId?: string; // id_zak_room_type come stringa; mappato in config.ts
   channel?: string;
-  amount?: number;    // euro, quota soggiorno (price.rooms.total)
+  amount?: number;     // euro, quota soggiorno (price.rooms.total)
   arrivalTime?: string;
 }
 
@@ -82,8 +83,8 @@ export function normalizeReservation(r: ZakReservationRaw): ZakReservation {
 
   return {
     rcode: String(r.id_human ?? r.id ?? ""),
-    // Il nome ospite verra' aggiunto in Tappa 1b (chiamata customer dedicata).
-    guestName: undefined,
+    bookerId: typeof r.booker === "number" ? r.booker : undefined,
+    guestName: undefined, // riempito da fetchCustomerName in sync.ts
     arrival: parseZakDate(firstRoom?.dfrom),
     departure: parseZakDate(firstRoom?.dto),
     guests: totalGuests || undefined,
@@ -92,4 +93,18 @@ export function normalizeReservation(r: ZakReservationRaw): ZakReservation {
     amount: r.price?.rooms?.total ?? r.payment?.amount,
     arrivalTime: undefined,
   };
+}
+
+// Recupera nome e cognome di un cliente ZAK tramite il suo ID numerico.
+// Fallback silenzioso: se l'endpoint non risponde o non ha il nome, ritorna undefined.
+export async function fetchCustomerName(apiKey: string, customerId: number): Promise<string | undefined> {
+  try {
+    const json = await zakPost(apiKey, "/customers/fetch_customer", { id: customerId });
+    // La risposta puo' essere { data: {...} } oppure direttamente l'oggetto cliente.
+    const c = json?.data ?? json;
+    const name = [c?.name, c?.surname].filter(Boolean).join(" ").trim();
+    return name || undefined;
+  } catch {
+    return undefined;
+  }
 }

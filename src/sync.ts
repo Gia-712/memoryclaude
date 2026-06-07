@@ -1,6 +1,6 @@
 // Orchestrazione del sync: legge ZAK e fa upsert in Notion (tutte le strutture mappate).
 import { NOTION_DB_ID, mapUnit } from "./config";
-import { fetchReservationsByArrival, fetchTodayReservations, normalizeReservation } from "./zak";
+import { fetchReservationsByArrival, fetchTodayReservations, fetchCustomerName, normalizeReservation } from "./zak";
 import { upsertReservation, type UpsertResult } from "./notion";
 
 export interface SyncEnv {
@@ -38,9 +38,23 @@ export async function runSync(env: SyncEnv, daysAhead = 14): Promise<{
 
   const all = Array.from(byCode.values());
 
-  // Entrano tutte le strutture riconosciute (Divo + Relais + Vatican).
-  // Restano fuori solo le camere non mappate (es. unita' chiuse/sconosciute).
+  // Solo strutture riconosciute (Divo + Relais + Vatican); sconosciute saltate.
   const known = all.filter(r => mapUnit(r.roomTypeId) !== undefined);
+
+  // Fetch nomi ospiti: un'unica chiamata per booker_id univoco (dedup).
+  const uniqueBookerIds = [...new Set(known.map(r => r.bookerId).filter((id): id is number => id != null))];
+  const nameCache = new Map<number, string>();
+  await Promise.all(
+    uniqueBookerIds.map(async id => {
+      const name = await fetchCustomerName(env.ZAK_API_KEY, id);
+      if (name) nameCache.set(id, name);
+    }),
+  );
+  for (const r of known) {
+    if (r.bookerId != null && nameCache.has(r.bookerId)) {
+      r.guestName = nameCache.get(r.bookerId);
+    }
+  }
 
   const results: UpsertResult[] = [];
   const errors: string[] = [];
