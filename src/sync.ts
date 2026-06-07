@@ -1,5 +1,5 @@
-// Orchestrazione del sync: legge ZAK e fa upsert in Notion.
-import { NOTION_DB_ID } from "./config";
+// Orchestrazione del sync: legge ZAK e fa upsert in Notion (solo prenotazioni Divo).
+import { NOTION_DB_ID, mapRoom } from "./config";
 import { fetchReservationsByArrival, fetchTodayReservations, normalizeReservation } from "./zak";
 import { upsertReservation, type UpsertResult } from "./notion";
 
@@ -13,10 +13,10 @@ function ymd(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-// Finestra: da oggi a +N giorni (arrivi a breve) + arrivi di oggi.
 export async function runSync(env: SyncEnv, daysAhead = 14): Promise<{
   ok: boolean;
   total: number;
+  skipped: number;
   results: UpsertResult[];
   errors: string[];
 }> {
@@ -36,14 +36,19 @@ export async function runSync(env: SyncEnv, daysAhead = 14): Promise<{
     if (n.rcode) byCode.set(n.rcode, n);
   }
 
+  const all = Array.from(byCode.values());
+
+  // Solo Divo (BLU/ROSSO/GIALLO/BORGO): Relais e Vatican vengono saltate.
+  const divo = all.filter(r => mapRoom(r.roomName) !== undefined);
+
   const results: UpsertResult[] = [];
   const errors: string[] = [];
-  for (const r of byCode.values()) {
+  for (const r of divo) {
     try {
       results.push(await upsertReservation(env.NOTION_TOKEN, dbId, r));
     } catch (e: any) {
       errors.push(`${r.rcode}: ${e?.message ?? e}`);
     }
   }
-  return { ok: errors.length === 0, total: byCode.size, results, errors };
+  return { ok: errors.length === 0, total: divo.length, skipped: all.length - divo.length, results, errors };
 }

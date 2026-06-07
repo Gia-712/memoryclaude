@@ -1,12 +1,6 @@
 // Client minimale per la WuBook kapi (ZAK).
-// Auth: header "x-api-key: wb_...". Endpoint reservations:
-//   POST /kp/reservations/fetch_reservations       (lista, con filtri date arrivo + paginazione)
-//   POST /kp/reservations/fetch_today_reservations  (arrivi/in casa oggi)
-// Doc: https://tdocs.wubook.net/kapi/reservation.html
 import { ZAK_BASE } from "./config";
 
-// Forma "grezza" della prenotazione ZAK. I nomi esatti dei campi vanno confermati
-// con la rotta /debug; qui usiamo accessi difensivi (vedi normalizeReservation).
 export type ZakReservationRaw = Record<string, any>;
 
 async function zakPost(apiKey: string, path: string, body: unknown): Promise<any> {
@@ -31,14 +25,11 @@ async function zakPost(apiKey: string, path: string, body: unknown): Promise<any
   return json;
 }
 
-// Prenotazioni con arrivo in una finestra di date (YYYY-MM-DD).
 export async function fetchReservationsByArrival(
   apiKey: string,
   fromDate: string,
   toDate: string,
 ): Promise<ZakReservationRaw[]> {
-  // Il filtro esatto va confermato con la doc/dati reali; passiamo una struttura
-  // ragionevole e lasciamo che /debug ci mostri la risposta.
   const json = await zakPost(apiKey, "/reservations/fetch_reservations", {
     filters: {
       arrival: { from: fromDate, to: toDate },
@@ -48,14 +39,11 @@ export async function fetchReservationsByArrival(
   return extractList(json);
 }
 
-// Arrivi/prenotazioni di oggi.
 export async function fetchTodayReservations(apiKey: string): Promise<ZakReservationRaw[]> {
   const json = await zakPost(apiKey, "/reservations/fetch_today_reservations", {});
   return extractList(json);
 }
 
-// La kapi di solito incapsula i dati in { data: ... } o { results: [...] }.
-// Normalizziamo qui in modo difensivo.
 function extractList(json: any): ZakReservationRaw[] {
   if (Array.isArray(json)) return json;
   if (Array.isArray(json?.data)) return json.data;
@@ -65,40 +53,43 @@ function extractList(json: any): ZakReservationRaw[] {
   return [];
 }
 
-// Vista normalizzata usata dal sync. Accesso difensivo: i nomi alternativi coprono
-// le varianti più comuni della kapi; confermare con /debug e rifinire se serve.
 export interface ZakReservation {
   rcode: string;
   guestName?: string;
-  arrival?: string; // YYYY-MM-DD
+  arrival?: string;   // YYYY-MM-DD
   departure?: string; // YYYY-MM-DD
   guests?: number;
-  roomName?: string;
+  roomName?: string;  // id_zak_room_type come stringa; mappato in config.ts
   channel?: string;
-  amount?: number; // euro
+  amount?: number;    // euro, quota soggiorno (price.rooms.total)
   arrivalTime?: string;
 }
 
+// ZAK manda le date in DD/MM/YYYY; Notion richiede YYYY-MM-DD.
+function parseZakDate(d: string | undefined): string | undefined {
+  if (!d) return undefined;
+  const m = d.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  return d;
+}
+
 export function normalizeReservation(r: ZakReservationRaw): ZakReservation {
-  const pick = (...keys: string[]) => {
-    for (const k of keys) {
-      const v = k.split(".").reduce<any>((o, kk) => (o == null ? o : o[kk]), r);
-      if (v !== undefined && v !== null && v !== "") return v;
-    }
-    return undefined;
-  };
-  const rooms = pick("rooms", "accommodations", "units");
-  const firstRoom = Array.isArray(rooms) ? rooms[0] : rooms;
+  const firstRoom = Array.isArray(r.rooms) ? r.rooms[0] : null;
+  const occ = firstRoom?.occupancy;
+  const totalGuests = occ
+    ? (occ.adults || 0) + (occ.teens || 0) + (occ.children || 0) + (occ.babies || 0)
+    : undefined;
 
   return {
-    rcode: String(pick("rcode", "id", "reservation_code", "code") ?? ""),
-    guestName: pick("customer.name", "guest.name", "booker", "customer_name", "name"),
-    arrival: pick("arrival", "checkin", "from", "dfrom"),
-    departure: pick("departure", "checkout", "to", "dto"),
-    guests: Number(pick("guests", "occupancy", "persons", "pax")) || undefined,
-    roomName: firstRoom?.name ?? firstRoom?.room_name ?? pick("room_name"),
-    channel: pick("channel", "source", "ota", "origin"),
-    amount: Number(pick("total", "amount", "price", "total_price")) || undefined,
-    arrivalTime: pick("arrival_time", "checkin_time", "eta"),
+    rcode: String(r.id_human ?? r.id ?? ""),
+    // Il nome ospite non arriva da questo endpoint; va compilato a mano in Notion.
+    guestName: undefined,
+    arrival: parseZakDate(firstRoom?.dfrom),
+    departure: parseZakDate(firstRoom?.dto),
+    guests: totalGuests || undefined,
+    roomName: firstRoom?.id_zak_room_type != null ? String(firstRoom.id_zak_room_type) : undefined,
+    channel: r.origin?.channel,
+    amount: r.price?.rooms?.total ?? r.payment?.amount,
+    arrivalTime: undefined,
   };
 }
