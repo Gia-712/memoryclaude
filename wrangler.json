@@ -3,13 +3,12 @@
   "main": "src/index.ts",
   "name": "memoryclaude",
   "upload_source_maps": true,
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_id": "552e3271-f379-4f36-8bb5-496972fbd2bb",
-      "database_name": "yellow-glitter-b521-d1"
-    }
-  ],
+  "triggers": {
+    "crons": ["*/15 * * * *"]
+  },
+  "vars": {
+    "NOTION_DB_ID": "8a4031151e134b79b10a795c936b2c6c"
+  },
   "observability": {
     "enabled": true
   }
