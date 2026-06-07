@@ -14,16 +14,16 @@ export interface UnitInfo {
 
 export const UNIT_MAP: Record<string, UnitInfo> = {
   // Divo Apartments (VivaWallet / Villaggio Turchese)
-  "63470": { struttura: "Divo Apartments", sistemazione: "BLU",   cameraDivo: "BLU",   photoUrl: "https://divoapartments.com/wp-content/uploads/2019/07/DSC_1832.jpg" },
-  "63620": { struttura: "Divo Apartments", sistemazione: "ROSSA", cameraDivo: "ROSSO", photoUrl: "https://divoapartments.com/wp-content/uploads/2019/07/DSC_1935.jpg" },
-  "63621": { struttura: "Divo Apartments", sistemazione: "ORO",   cameraDivo: "GIALLO",photoUrl: "https://divoapartments.com/wp-content/uploads/2019/07/DSC_1986.jpg" },
-  "63471": { struttura: "Divo Apartments", sistemazione: "BORGO", cameraDivo: "BORGO", photoUrl: "https://divoapartments.com/wp-content/uploads/2021/07/divo-apartments-roma_luxury_00006.jpg" },
+  "63470": { struttura: "Divo Apartments", sistemazione: "BLU",   cameraDivo: "BLU",    photoUrl: "https://divoapartments.com/wp-content/uploads/2019/07/DSC_1832.jpg" },
+  "63620": { struttura: "Divo Apartments", sistemazione: "ROSSA", cameraDivo: "ROSSO",  photoUrl: "https://divoapartments.com/wp-content/uploads/2019/07/DSC_1935.jpg" },
+  "63621": { struttura: "Divo Apartments", sistemazione: "ORO",   cameraDivo: "GIALLO", photoUrl: "https://divoapartments.com/wp-content/uploads/2019/07/DSC_1986.jpg" },
+  "63471": { struttura: "Divo Apartments", sistemazione: "BORGO", cameraDivo: "BORGO",  photoUrl: "https://divoapartments.com/wp-content/uploads/2021/07/divo-apartments-roma_luxury_00006.jpg" },
   // Relais Colonna (Stripe / Roma Centro Relais)
   "63466": { struttura: "Relais Colonna", sistemazione: "Suite Vasca (A)", photoUrl: "https://www.relaiscolonna.it/images/rc/camere/suite-idro.jpg" },
   "63469": { struttura: "Relais Colonna", sistemazione: "Suite (D)",       photoUrl: "https://www.relaiscolonna.it/images/rc/camere/suite.jpg" },
   "63468": { struttura: "Relais Colonna", sistemazione: "Standard (B/C)",  photoUrl: "https://www.relaiscolonna.it/images/rc/camere/matri1_xl.jpg" },
-  // Vatican Escape (Stripe / Roma Centro Relais) — foto da Drive, da aggiornare
-  "88625": { struttura: "Vatican Escape", sistemazione: "Vatican Escape", photoUrl: undefined },
+  // Vatican Escape (Stripe / Roma Centro Relais)
+  "88625": { struttura: "Vatican Escape", sistemazione: "Vatican Escape", photoUrl: "https://lh3.googleusercontent.com/d/1pgnrCmJIxDrNQZDRf7WaXH-SWvdpfHK3" },
 };
 
 export const GUIDEBOOK_URL: Record<string, string> = {
