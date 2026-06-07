@@ -1,7 +1,7 @@
 // Worker "ponte" ZAK -> Notion per la dashboard PRENOTAZIONI.
 import { renderHtml } from "./renderHtml";
 import { runSync, type SyncEnv } from "./sync";
-import { fetchTodayReservations, ZAK_BASE } from "./zak";
+import { fetchTodayReservations } from "./zak";
 
 interface Env extends SyncEnv {
   SYNC_SECRET?: string;
@@ -10,20 +10,6 @@ interface Env extends SyncEnv {
 function authorized(url: URL, env: Env): boolean {
   if (!env.SYNC_SECRET) return true;
   return url.searchParams.get("key") === env.SYNC_SECRET;
-}
-
-async function tryCustomer(apiKey: string, id: number) {
-  try {
-    const res = await fetch(`${ZAK_BASE}/customers/fetch_customer`, {
-      method: "POST",
-      headers: { "x-api-key": apiKey, "content-type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    const text = await res.text();
-    return { id, status: res.status, body: text.slice(0, 500) };
-  } catch (e: any) {
-    return { id, error: e?.message };
-  }
 }
 
 export default {
@@ -47,17 +33,7 @@ export default {
         dfrom:        r.rooms?.[0]?.dfrom,
         dto:          r.rooms?.[0]?.dto,
       }));
-      // Prova booker + primo customer da rooms[0] per trovare quale porta il nome.
-      const first = raw[0];
-      const booker = first?.booker;
-      const firstRoomCustomer = first?.rooms?.[0]?.customers?.[0]?.id;
-      const customerTests = await Promise.all([
-        booker ? tryCustomer(env.ZAK_API_KEY, booker) : null,
-        firstRoomCustomer && firstRoomCustomer !== booker
-          ? tryCustomer(env.ZAK_API_KEY, firstRoomCustomer)
-          : null,
-      ]);
-      return Response.json({ count: raw.length, summary, customerTests });
+      return Response.json({ count: raw.length, summary, full_first_sample: raw[0] ?? null });
     }
 
     return new Response(
