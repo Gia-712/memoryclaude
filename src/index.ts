@@ -1,7 +1,7 @@
 // Worker "ponte" ZAK -> Notion per la dashboard PRENOTAZIONI.
 import { renderHtml } from "./renderHtml";
 import { runSync, type SyncEnv } from "./sync";
-import { fetchTodayReservations, fetchCustomerName } from "./zak";
+import { fetchTodayReservations, ZAK_BASE } from "./zak";
 
 interface Env extends SyncEnv {
   SYNC_SECRET?: string;
@@ -33,12 +33,23 @@ export default {
         dfrom:        r.rooms?.[0]?.dfrom,
         dto:          r.rooms?.[0]?.dto,
       }));
-      // Test fetchCustomerName sul primo booker per verificare l'endpoint.
+      // Mostra la risposta RAW dell'endpoint customer per trovare la struttura corretta.
       const firstBooker = raw[0]?.booker;
-      const customerTest = firstBooker
-        ? { bookerId: firstBooker, name: await fetchCustomerName(env.ZAK_API_KEY, firstBooker) }
-        : null;
-      return Response.json({ count: raw.length, summary, customerTest });
+      let customerRaw: any = null;
+      if (firstBooker) {
+        try {
+          const res = await fetch(`${ZAK_BASE}/customers/fetch_customer`, {
+            method: "POST",
+            headers: { "x-api-key": env.ZAK_API_KEY, "content-type": "application/json" },
+            body: JSON.stringify({ id: firstBooker }),
+          });
+          const text = await res.text();
+          customerRaw = { status: res.status, body: text.slice(0, 1000) };
+        } catch (e: any) {
+          customerRaw = { error: e?.message };
+        }
+      }
+      return Response.json({ count: raw.length, summary, customerRaw });
     }
 
     return new Response(

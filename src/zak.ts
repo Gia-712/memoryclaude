@@ -1,5 +1,5 @@
 // Client minimale per la WuBook kapi (ZAK).
-import { ZAK_BASE } from "./config";
+export const ZAK_BASE = "https://kapi.wubook.net/kp";
 
 export type ZakReservationRaw = Record<string, any>;
 
@@ -55,18 +55,17 @@ function extractList(json: any): ZakReservationRaw[] {
 
 export interface ZakReservation {
   rcode: string;
-  bookerId?: number;   // ID numerico booker, usato per fetchCustomerName
+  bookerId?: number;
   guestName?: string;
-  arrival?: string;    // YYYY-MM-DD
-  departure?: string;  // YYYY-MM-DD
+  arrival?: string;
+  departure?: string;
   guests?: number;
-  roomTypeId?: string; // id_zak_room_type come stringa; mappato in config.ts
+  roomTypeId?: string;
   channel?: string;
-  amount?: number;     // euro, quota soggiorno (price.rooms.total)
+  amount?: number;
   arrivalTime?: string;
 }
 
-// ZAK manda le date in DD/MM/YYYY; Notion richiede YYYY-MM-DD.
 function parseZakDate(d: string | undefined): string | undefined {
   if (!d) return undefined;
   const m = d.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -84,7 +83,7 @@ export function normalizeReservation(r: ZakReservationRaw): ZakReservation {
   return {
     rcode: String(r.id_human ?? r.id ?? ""),
     bookerId: typeof r.booker === "number" ? r.booker : undefined,
-    guestName: undefined, // riempito da fetchCustomerName in sync.ts
+    guestName: undefined,
     arrival: parseZakDate(firstRoom?.dfrom),
     departure: parseZakDate(firstRoom?.dto),
     guests: totalGuests || undefined,
@@ -95,12 +94,9 @@ export function normalizeReservation(r: ZakReservationRaw): ZakReservation {
   };
 }
 
-// Recupera nome e cognome di un cliente ZAK tramite il suo ID numerico.
-// Fallback silenzioso: se l'endpoint non risponde o non ha il nome, ritorna undefined.
 export async function fetchCustomerName(apiKey: string, customerId: number): Promise<string | undefined> {
   try {
     const json = await zakPost(apiKey, "/customers/fetch_customer", { id: customerId });
-    // La risposta puo' essere { data: {...} } oppure direttamente l'oggetto cliente.
     const c = json?.data ?? json;
     const name = [c?.name, c?.surname].filter(Boolean).join(" ").trim();
     return name || undefined;
