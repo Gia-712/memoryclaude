@@ -6,14 +6,15 @@ export const NOTION_DB_ID = "8a4031151e134b79b10a795c936b2c6c";
 export const ZAK_BASE = "https://kapi.wubook.net/kp";
 
 // Mappa id_zak_room_type (numerico, come stringa) → nome camera Divo.
-// I valori si trovano nel campo "room_type_id" della rotta /debug → summary.
-// Aggiorna questi ID dopo aver aperto /debug e identificato le prenotazioni Divo.
+// Valori reali confermati dal Planner ZAK (giugno 2026):
+//   63470 BLU · 63620 ROSSA · 63621 ORO · 63471 BORGO.
+// Fuori mappa (= saltate dal sync): Relais 63466 SuiteVasca / 63469 Suite /
+//   63468 Standard B-C, Vatican 88625.
 export const ROOM_MAP: Record<string, "BLU" | "ROSSO" | "GIALLO" | "BORGO"> = {
-  // Esempi (sostituire con i valori reali visti in /debug):
-  // "63470": "BLU",
-  // "63471": "ROSSO",
-  // "63472": "GIALLO",
-  // "63473": "BORGO",
+  "63470": "BLU",
+  "63620": "ROSSO",
+  "63621": "GIALLO", // in ZAK "Oro", all'ospite si dice GIALLO
+  "63471": "BORGO",
 };
 
 export const GUIDEBOOK_URL: Record<string, string> = {
