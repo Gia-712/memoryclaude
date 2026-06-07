@@ -5,23 +5,35 @@ export const NOTION_DB_ID = "8a4031151e134b79b10a795c936b2c6c";
 
 export const ZAK_BASE = "https://kapi.wubook.net/kp";
 
-// Mappa id_zak_room_type (numerico, come stringa) → nome camera Divo.
-// Valori reali confermati dal Planner ZAK (giugno 2026):
-//   63470 BLU · 63620 ROSSA · 63621 ORO · 63471 BORGO.
-// Fuori mappa (= saltate dal sync): Relais 63466 SuiteVasca / 63469 Suite /
-//   63468 Standard B-C, Vatican 88625.
-export const ROOM_MAP: Record<string, "BLU" | "ROSSO" | "GIALLO" | "BORGO"> = {
-  "63470": "BLU",
-  "63620": "ROSSO",
-  "63621": "GIALLO", // in ZAK "Oro", all'ospite si dice GIALLO
-  "63471": "BORGO",
+export type Struttura = "Divo Apartments" | "Relais Colonna" | "Vatican Escape";
+
+export interface UnitInfo {
+  struttura: Struttura;
+  sistemazione: string; // etichetta leggibile mostrata nella dashboard
+  cameraDivo?: "BLU" | "ROSSO" | "GIALLO" | "BORGO"; // valorizzato solo per Divo
+}
+
+// Mappa id_zak_room_type (numerico, come stringa) -> struttura + sistemazione.
+// Valori reali confermati dal Planner ZAK (giugno 2026).
+export const UNIT_MAP: Record<string, UnitInfo> = {
+  // Divo Apartments (VivaWallet / Villaggio Turchese)
+  "63470": { struttura: "Divo Apartments", sistemazione: "BLU",   cameraDivo: "BLU" },
+  "63620": { struttura: "Divo Apartments", sistemazione: "ROSSA", cameraDivo: "ROSSO" },
+  "63621": { struttura: "Divo Apartments", sistemazione: "ORO",   cameraDivo: "GIALLO" },
+  "63471": { struttura: "Divo Apartments", sistemazione: "BORGO", cameraDivo: "BORGO" },
+  // Relais Colonna (Stripe / Roma Centro Relais)
+  "63466": { struttura: "Relais Colonna", sistemazione: "Suite Vasca (A)" },
+  "63469": { struttura: "Relais Colonna", sistemazione: "Suite (D)" },
+  "63468": { struttura: "Relais Colonna", sistemazione: "Standard (B/C)" },
+  // Vatican Escape (Stripe / Roma Centro Relais)
+  "88625": { struttura: "Vatican Escape", sistemazione: "Vatican Escape" },
 };
 
 export const GUIDEBOOK_URL: Record<string, string> = {
-  BLU:   "https://app.notion.com/p/376321d78ccd8151a6fff2f796902192",
-  ROSSO: "https://app.notion.com/p/376321d78ccd81d9bdfdf3a9156d85fb",
-  GIALLO:"https://app.notion.com/p/376321d78ccd81dc9422cb4189215e26",
-  BORGO: "https://app.notion.com/p/376321d78ccd81ecb9b0daefca44056a",
+  BLU:    "https://app.notion.com/p/376321d78ccd8151a6fff2f796902192",
+  ROSSO:  "https://app.notion.com/p/376321d78ccd81d9bdfdf3a9156d85fb",
+  GIALLO: "https://app.notion.com/p/376321d78ccd81dc9422cb4189215e26",
+  BORGO:  "https://app.notion.com/p/376321d78ccd81ecb9b0daefca44056a",
 };
 
 export const CHANNEL_MAP: Array<{ match: string; value: "Airbnb" | "Booking.com" | "Diretto" | "Expedia" }> = [
@@ -33,9 +45,9 @@ export const CHANNEL_MAP: Array<{ match: string; value: "Airbnb" | "Booking.com"
   { match: "web",     value: "Diretto" },
 ];
 
-export function mapRoom(roomTypeId: string | undefined): "BLU" | "ROSSO" | "GIALLO" | "BORGO" | undefined {
+export function mapUnit(roomTypeId: string | undefined): UnitInfo | undefined {
   if (!roomTypeId) return undefined;
-  return ROOM_MAP[roomTypeId];
+  return UNIT_MAP[roomTypeId];
 }
 
 export function mapChannel(zakChannel: string | undefined): string | undefined {

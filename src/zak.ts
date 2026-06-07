@@ -59,7 +59,7 @@ export interface ZakReservation {
   arrival?: string;   // YYYY-MM-DD
   departure?: string; // YYYY-MM-DD
   guests?: number;
-  roomName?: string;  // id_zak_room_type come stringa; mappato in config.ts
+  roomTypeId?: string; // id_zak_room_type come stringa; mappato in config.ts
   channel?: string;
   amount?: number;    // euro, quota soggiorno (price.rooms.total)
   arrivalTime?: string;
@@ -82,12 +82,12 @@ export function normalizeReservation(r: ZakReservationRaw): ZakReservation {
 
   return {
     rcode: String(r.id_human ?? r.id ?? ""),
-    // Il nome ospite non arriva da questo endpoint; va compilato a mano in Notion.
+    // Il nome ospite verra' aggiunto in Tappa 1b (chiamata customer dedicata).
     guestName: undefined,
     arrival: parseZakDate(firstRoom?.dfrom),
     departure: parseZakDate(firstRoom?.dto),
     guests: totalGuests || undefined,
-    roomName: firstRoom?.id_zak_room_type != null ? String(firstRoom.id_zak_room_type) : undefined,
+    roomTypeId: firstRoom?.id_zak_room_type != null ? String(firstRoom.id_zak_room_type) : undefined,
     channel: r.origin?.channel,
     amount: r.price?.rooms?.total ?? r.payment?.amount,
     arrivalTime: undefined,

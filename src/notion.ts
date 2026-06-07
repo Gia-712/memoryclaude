@@ -1,8 +1,7 @@
-// Upsert delle prenotazioni nel database Notion 📅 PRENOTAZIONI.
-// Usa la REST API pubblica di Notion (Authorization: Bearer NOTION_TOKEN).
+// Upsert delle prenotazioni nel database Notion PRENOTAZIONI.
 // Match per "Codice ZAK": se esiste -> aggiorna solo i campi provenienti da ZAK,
-// lasciando intatti i campi gestiti a mano (Modalità Booking, Stato ricevuta, ▶️...).
-import { GUIDEBOOK_URL, mapChannel, mapRoom } from "./config";
+// lasciando intatti i campi gestiti a mano (Modalita' Booking, Stato ricevuta, ...).
+import { GUIDEBOOK_URL, mapChannel, mapUnit } from "./config";
 import type { ZakReservation } from "./zak";
 
 const NOTION_API = "https://api.notion.com/v1";
@@ -30,9 +29,9 @@ async function findPageByZakCode(token: string, dbId: string, rcode: string): Pr
   return json.results?.[0]?.id ?? null;
 }
 
-// Proprietà che derivano da ZAK (sovrascrivibili a ogni sync).
+// Proprieta' che derivano da ZAK (sovrascrivibili a ogni sync).
 function zakProps(r: ZakReservation) {
-  const camera = mapRoom(r.roomName);
+  const unit = mapUnit(r.roomTypeId);
   const piattaforma = mapChannel(r.channel);
   const props: Record<string, any> = {
     Nome: { title: [{ text: { content: r.guestName || r.rcode || "Senza nome" } }] },
@@ -43,9 +42,14 @@ function zakProps(r: ZakReservation) {
   if (r.guests) props["N. Ospiti"] = { number: r.guests };
   if (r.arrivalTime) props["Orario Arrivo"] = { rich_text: [{ text: { content: r.arrivalTime } }] };
   if (piattaforma) props["Piattaforma"] = { select: { name: piattaforma } };
-  if (camera) {
-    props["Camera Divo"] = { select: { name: camera } };
-    if (GUIDEBOOK_URL[camera]) props["Guidebook camera"] = { url: GUIDEBOOK_URL[camera] };
+  if (unit) {
+    props["Struttura"] = { select: { name: unit.struttura } };
+    props["Sistemazione"] = { rich_text: [{ text: { content: unit.sistemazione } }] };
+    if (unit.cameraDivo) {
+      props["Camera Divo"] = { select: { name: unit.cameraDivo } };
+      const g = GUIDEBOOK_URL[unit.cameraDivo];
+      if (g) props["Guidebook camera"] = { url: g };
+    }
   }
   if (typeof r.amount === "number") {
     props["Da Incassare"] = { number: r.amount };
@@ -54,7 +58,7 @@ function zakProps(r: ZakReservation) {
   return props;
 }
 
-// Proprietà impostate SOLO alla creazione (default; non toccate sugli update).
+// Proprieta' impostate SOLO alla creazione (default; non toccate sugli update).
 function defaultsOnCreate() {
   return {
     "Stato ricevuta": { select: { name: "Da fare" } },

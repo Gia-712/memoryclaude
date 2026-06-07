@@ -1,5 +1,5 @@
-// Orchestrazione del sync: legge ZAK e fa upsert in Notion (solo prenotazioni Divo).
-import { NOTION_DB_ID, mapRoom } from "./config";
+// Orchestrazione del sync: legge ZAK e fa upsert in Notion (tutte le strutture mappate).
+import { NOTION_DB_ID, mapUnit } from "./config";
 import { fetchReservationsByArrival, fetchTodayReservations, normalizeReservation } from "./zak";
 import { upsertReservation, type UpsertResult } from "./notion";
 
@@ -38,17 +38,18 @@ export async function runSync(env: SyncEnv, daysAhead = 14): Promise<{
 
   const all = Array.from(byCode.values());
 
-  // Solo Divo (BLU/ROSSO/GIALLO/BORGO): Relais e Vatican vengono saltate.
-  const divo = all.filter(r => mapRoom(r.roomName) !== undefined);
+  // Entrano tutte le strutture riconosciute (Divo + Relais + Vatican).
+  // Restano fuori solo le camere non mappate (es. unita' chiuse/sconosciute).
+  const known = all.filter(r => mapUnit(r.roomTypeId) !== undefined);
 
   const results: UpsertResult[] = [];
   const errors: string[] = [];
-  for (const r of divo) {
+  for (const r of known) {
     try {
       results.push(await upsertReservation(env.NOTION_TOKEN, dbId, r));
     } catch (e: any) {
       errors.push(`${r.rcode}: ${e?.message ?? e}`);
     }
   }
-  return { ok: errors.length === 0, total: divo.length, skipped: all.length - divo.length, results, errors };
+  return { ok: errors.length === 0, total: known.length, skipped: all.length - known.length, results, errors };
 }
