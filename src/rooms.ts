@@ -27,8 +27,8 @@ export interface Room {
 export const CONTACT = {
   // Gianluca + Donatella (telefono aziendale).
   gianluca: "+39 328 619 0889",
-  // TODO: sostituire con il numero di Donatella (telefono aziendale).
-  donatella: "",
+  // Donatella — WhatsApp aziendale, sempre reperibile per le urgenze.
+  donatella: "+39 339 105 6932",
 };
 
 // Orario dal quale il codice diventa visibile (ora locale di Roma).
@@ -56,8 +56,7 @@ export const ROOMS: Record<string, Room> = {
     slug: "rosso",
     name: "Divo Apartments ROSSO",
     emoji: "🔴",
-    // TODO: inserire il codice reale della camera ROSSO.
-    code: null,
+    code: "4637",
     floorCode: FRATTINA_FLOOR_CODE,
     address: "Via Frattina 89, 00187 Roma — Scala sinistra, 1° piano",
     theme: {
@@ -71,8 +70,8 @@ export const ROOMS: Record<string, Room> = {
     slug: "oro",
     name: "Divo Apartments ORO",
     emoji: "🟡",
-    // TODO: inserire il codice reale della camera ORO (in ZAK = GIALLO).
-    code: null,
+    // ORO in guida ospiti = GIALLO (in ZAK = GIALLO).
+    code: "6437",
     floorCode: FRATTINA_FLOOR_CODE,
     address: "Via Frattina 89, 00187 Roma — Scala sinistra, 1° piano",
     theme: {
