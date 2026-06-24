@@ -34,9 +34,23 @@ Cosa è già stato fatto (2026-06-24, fix LIVE/pubblicati):
 
 Note importanti:
 - Le credenziali Notion in n8n sono redatte in lettura ma visibili nei dati di
-  un'esecuzione in ERRORE. Diverse hanno token morti (401). Valida: **Notion account 7**.
+  un'esecuzione in ERRORE. Diverse hanno token morti (401). Valida: **Notion account 7**
+  (`AVDjTF5dnUkwQjIq`). Token confermati morti: `Notion account` (`7CRvzvb2ki7KYCxP`),
+  `Notion account 2` (`NP2fAEkzP5s1ri04`).
 - `update_workflow` salva in BOZZA → serve `publish_workflow` per andare live.
-- Schedule di "Roma Oggi v2" sembra girare ogni ora invece che solo alle 8:00
-  (rule field "hours" + triggerAtHour incoerenti) — da verificare se voglio limitarlo.
+- Esecuzioni n8n grandi sfondano il limite token: usa `jq` sul file salvato dal tool.
 
-Cosa potrei volerti chiedere ora: [scrivi qui il nuovo obiettivo].
+COSA RESTA DA FARE (da gestire in questa nuova chat):
+1. **Schedule Roma Oggi v2** (`ADKJRqO11ZQnUdgL`): gira **ogni ora** invece che solo
+   alle 8:00. Il nodo trigger "Ogni mattina alle 8:00" ha `rule.interval = [{field:"hours",
+   triggerAtHour:8}]`: con `field:"hours"` n8n fa "ogni N ore" e ignora `triggerAtHour`.
+   Fix: usare un intervallo giornaliero (field "days") con ora 8, oppure un cron `0 8 * * *`.
+   Ricordarsi `publish_workflow` dopo la modifica.
+2. **Memoria persistente del Direttore** (`7xHjYLRw1iDyF100`): oggi usa `memoryBufferWindow`
+   (in RAM, si azzera ai riavvii n8n, solo ultimi 25). Valutare una memoria persistente
+   (es. Postgres/Redis chat memory) se serve continuità tra riavvii/sessioni.
+3. **Pulizia Notion**: (a) eliminare la riga di test nel Diario
+   (id `389321d7-8ccd-817f-9e53-d1dcd4c569ee`, titolo "— (riga di prova Claude, eliminabile)");
+   (b) rimuovere le credenziali Notion con token morto, tenendo `Notion account 7`.
+
+Nuovo obiettivo per questa sessione: [scrivi qui].
