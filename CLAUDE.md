@@ -61,10 +61,17 @@ ricevute/email automatiche, ma la lacuna di Sofia non era coperta.)
   `Notion account 2` (`NP2fAEkzP5s1ri04`).
 - `update_workflow` salva in **bozza**: serve `publish_workflow` per andare live.
 
+### Fix C — Roma Oggi v2 (RISOLTO, pubblicato)
+`Notion | Roma Oggi v2` (`ADKJRqO11ZQnUdgL`) andava in **errore** (400) perché il nodo
+`Prepara Body PATCH` metteva tutto il testo in un solo `rich_text` e Notion limita a
+**2000 caratteri per elemento** (es. eventi = 3498). Ora il testo viene **spezzato in
+segmenti ≤1900** (più elementi rich_text nello stesso blocco). Testato: esecuzione `success`,
+4/4 PATCH ok. ⚠️ Lo schedule sembra girare **ogni ora** anziché solo alle 8:00
+(rule `field:"hours"` + `triggerAtHour:8` incoerenti) — da rivedere se si vuole limitarlo.
+
 ### Da fare / aperti
 - 🧹 Cancellare in Notion la riga di test nel Diario (titolo "— (riga di prova Claude, eliminabile)",
-  id `389321d7-8ccd-817f-9e53-d1dcd4c569ee`). Neutralizzata (non più ricercabile) ma non eliminata.
-- 🐛 **Separato**: `Notion | Roma Oggi v2` (`ADKJRqO11ZQnUdgL`) va in **errore ogni ora** dal
-  2026-06-23 ~21:00 — non è auth, è un 400: un blocco paragrafo supera i **2000 caratteri**
-  Notion (`body.paragraph.rich_text[0].text.content.length 3498 > 2000`). Va spezzato il testo.
+  id `389321d7-8ccd-817f-9e53-d1dcd4c569ee`). Neutralizzata (non più ricercabile) ma non eliminata
+  (il Notion MCP non espone l'eliminazione pagina; basta un click in Notion).
 - (Opzionale) `memoryBufferWindow` è volatile: valutare una memoria persistente se serve continuità tra riavvii.
+- (Opzionale) ripulire le credenziali Notion con token morto (401) in n8n; tenere `Notion account 7`.
